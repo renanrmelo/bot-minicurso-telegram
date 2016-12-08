@@ -2,16 +2,20 @@
 require 'vendor/autoload.php';
 
 use Telegram\Bot\Api;
+use Telegram\Bot\Keyboard\Keyboard;
+use Telegram\Bot\Helpers\Emojify;
+use Telegram\Bot\FileUpload\InputFile;
 
 $dotenv = new Dotenv\Dotenv(__DIR__);
 $dotenv->load();
 
 $telegram = new Api();
 
-$response = $telegram->getMe();
+$inputFile = new InputFile('telegram.png');
 
-$botId = $response->getId();
-$firstName = $response->getFirstName();
-$username = $response->getUsername();
-
-var_dump($botId, $firstName, $username);
+$telegram->sendPhoto([
+    'chat_id' => getenv('CHAT_ID'),
+    //'photo' => $inputFile->open(),
+    'photo' => 'http://php.net/manual/en/images/c0d23d2d6769e53e24a1b3136c064577-php_logo.png',
+    'caption' => 'PHP!!!'
+]);
