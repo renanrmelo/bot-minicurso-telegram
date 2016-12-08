@@ -1,47 +1,72 @@
 <?php
+
 require 'vendor/autoload.php';
 
+
 use Telegram\Bot\Api;
-use Telegram\Bot\Keyboard\Keyboard;
-use Telegram\Bot\Helpers\Emojify;
 
-$dotenv = new Dotenv\Dotenv(__DIR__);
-$dotenv->load();
+use Telegram\Bot\Objects\Update;
 
-$telegram = new Api();
 
-$reply_markup = Keyboard::make();
-$reply_markup->inline();
-$reply_markup->row(
-    Keyboard::inlineButton([
-        'text' => Emojify::text(':see_no_evil:') . ' Será anônimo ' . Emojify::text(':speak_no_evil:'),
-        'callback_data' => '/anonymous sdfds'
-    ])
-);
-$reply_markup->row(
-    Keyboard::inlineButton([
-        'text' => Emojify::text(':bulb:').'Eu',
-        'switch_inline_query_current_chat' => 'deslike'
-    ]),
-    Keyboard::inlineButton([
-        'text' => Emojify::text(':heart:').'Outro',
-        'switch_inline_query' => 'Like!'
-    ]),
-    Keyboard::inlineButton([
-        'text' => Emojify::text(':link:').'PHP',
-        'url' => 'http://php.net'
-    ])
-);
+if(file_exists('.env')) {
 
-$telegram->sendMessage([
-    'chat_id' => getenv('CHAT_ID'),
-    'text' =>
-        '<b>bold</b> ' .
-        '<i>italic</i> ' .
-        '<a href="phprio.org">PHPRio</a> ' .
-        '<code>fixed-width</code>' .
-        '<pre>code block</pre>',
-    'parse_mode' => 'HTML',
-    'disable_web_page_preview' => true,
-    'reply_markup' => $reply_markup
-]);
+    $dotenv = new Dotenv\Dotenv(__DIR__);
+
+    $dotenv->load();
+
+    class mockApi extends Api{
+
+        public function getWebhookUpdates($emitUpdateWasReceivedEvent = true) {
+
+            return new Update(json_decode(getenv('MOCK_JSON'), true));
+
+        }
+
+    }
+
+    $telegram = new mockApi();
+
+} else {
+
+    error_log(file_get_contents('php://input'));
+
+    $telegram = new Api();
+
+}
+
+
+$update = $telegram->getWebhookUpdates();
+
+if($update->has('message')) {
+
+    $message = $update->getMessage();
+
+    if($message->has('text')) {
+
+        switch($text = $message->getText()) {
+
+            case '/about':
+
+                $telegram->sendMessage([
+
+                    'chat_id' => $message->getChat()->getId(),
+
+                    'text' => 'Sobre alguma coisa',
+
+                    'reply_to_message_id' => $message->getMessageId()
+
+                ]);
+
+                break;
+
+            case '/start':
+
+            case (preg_match('/^\/start (?<token>[a-f0-9]{32})/', $text, $matches) ? true : false):
+
+                break;
+
+        }
+
+    }
+
+}
